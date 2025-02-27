@@ -72,3 +72,24 @@ class LogoutAPIView(APIView):
         response.delete_cookie('refresh_token')
         response.delete_cookie('user_id')
         return response
+    
+class DeleteUserAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        refresh_token = request.COOKIES.get('refresh_token')
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except Exception as e:
+                pass
+
+        user = request.user
+        user.delete()
+
+        response = Response({"detail": "User deleted Successfully"}, status=status.HTTP_200_OK)
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
+        response.delete_cookie('user_id')
+        return response
