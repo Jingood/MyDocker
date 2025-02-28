@@ -6,7 +6,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import get_user_model
-from .serializers import SignupSerializer
+from .serializers import SignupSerializer, PasswordChangeSerializer
 from .models import User
 
 class SignupAPIView(APIView):
@@ -72,6 +72,16 @@ class LogoutAPIView(APIView):
         response.delete_cookie('refresh_token')
         response.delete_cookie('user_id')
         return response
+    
+class ChangePasswordAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = PasswordChangeSerializer(data=request.data, context = {'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "비밀번호가 변경되었습니다."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class DeleteUserAPIView(APIView):
     permission_classes = [IsAuthenticated]
