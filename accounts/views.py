@@ -4,10 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.shortcuts import render, get_object_or_404
-from django.contrib.auth import get_user_model
 from .serializers import SignupSerializer, PasswordChangeSerializer
-from .models import User
 
 class SignupAPIView(APIView):
     permission_classes = [AllowAny]
