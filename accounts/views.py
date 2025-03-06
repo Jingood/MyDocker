@@ -58,7 +58,7 @@ class LogoutAPIView(APIView):
     def post(self, request):
         refresh_token = request.COOKIES.get('refresh_token')
         if not refresh_token:
-            return Response({"error":"Refresh Token Not Found."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error":"Refresh Not Found."}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             token = RefreshToken(refresh_token)
@@ -121,5 +121,5 @@ class ProfileAPIView(APIView):
         return Response({
             "my_posts": my_posts_serializer.data,
             "my_comments": my_comments_serializer.data,
-            "liked_posts": liked_posts_serializer
+            "liked_posts": liked_posts_serializer.data
         }, status=status.HTTP_200_OK)
