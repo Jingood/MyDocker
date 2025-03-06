@@ -5,6 +5,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import SignupSerializer, PasswordChangeSerializer
+from posts.models import Post, Comment
+from posts.serializers import PostSerializer, CommentSerializer
 
 class SignupAPIView(APIView):
     permission_classes = [AllowAny]
@@ -100,3 +102,24 @@ class DeleteUserAPIView(APIView):
         response.delete_cookie('refresh_token')
         response.delete_cookie('user_id')
         return response
+    
+class ProfileAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        my_posts = Post.objects.filter(author=user).order_by('-created_at')
+        my_posts_serializer = PostSerializer(my_posts, many=True)
+
+        my_comments = Comment.objects.filter(author=user).order_by('-created_at')
+        my_comments_serializer = CommentSerializer(my_comments, many=True)
+
+        liked_posts = Post.objects.filter(likes=user).order_by('-created_at')
+        liked_posts_serializer = PostSerializer(liked_posts, many=True)
+
+        return Response({
+            "my_posts": my_posts_serializer.data,
+            "my_comments": my_comments_serializer.data,
+            "liked_posts": liked_posts_serializer
+        }, status=status.HTTP_200_OK)
