@@ -27,10 +27,8 @@ class UserBehavior(TaskSet):
         if response.status_code == 200:
             token = response.json().get("access")
             if token:
-                self.client.headers.update({"Authorization": "Bearer {token}"})
+                self.client.headers.update({"Authorization": f"Bearer {token}"})
 
-    @task
-    def change_password(self):
         self.old_password = self.password
         self.new_password = "abcd1234"
 
@@ -39,11 +37,15 @@ class UserBehavior(TaskSet):
             "new_password1": self.new_password, 
             "new_password2": self.new_password
             }
-        self.client.post("/accounts/api/profile/change_password/", json=change_data)
-        self.password = self.new_password
+        with self.client.post("/accounts/api/profile/change_password/", json=change_data, catch_response=True) as response:
+            if response.status_code == 200:
+                response.success()
+                self.password = self.new_password
+            else:
+                response.failure(f"비밀번호 변경 실패: {response.status_code}")
     
     @task
-    def create_post(self):
+    def scenario_flow(self):
         title = f"{random_string(5)}"
         content = f"{random_string(20)}"
 
@@ -51,22 +53,87 @@ class UserBehavior(TaskSet):
             "title": title,
             "content": content
         }
-        response = self.client.post("/posts/api/", json=post_data)
-        self.post_id = response.json().get("id")
+        with self.client.post("/posts/api/", json=post_data, catch_response=True) as response:
+            if response.status_code == 200:
+                response.success()
+                self.post_id = response.json().get("id")
+            else:
+                response.failure(f"게시물 생성 실패: {response.status_code}")
 
-    @task
-    def get_post_list(self):
-        self.client.get("/posts/api/")
-    
-    @task
-    def update_post(self):
+        with self.client.get("/posts/api/", catch_response=True) as response:
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure(f"게시물 목록 조회 실패: {response.status_code}")
+
         post_id = self.post_id
-        title = f"{random_string(10)}"
-        content = f"{random_string(15)}"
+        up_title = f"{random_string(10)}"
+        up_content = f"{random_string(15)}"
 
         upost_data = {
-            "post_id": post_id,
-            "title": title,
-            "content": content
+            "title": up_title,
+            "content": up_content
         }
-        self.client.put(f"/posts/api/{post_id}/", json=upost_data)
+        with self.client.put(f"/posts/api/{post_id}/", json=upost_data, catch_response=True) as response:
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure(f"게시물 수정 실패: {response.status_code}")
+
+        p_like_data = {
+            "post_id": post_id
+        }
+        with self.client.post(f"/posts/api/like/{post_id}/", json=p_like_data, catch_response=True) as response:
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure(f"게시물 좋아요 실패: {response.status_code}")
+    
+        c_content = f"{random_string(7)}"
+
+        comment_data = {
+            "content": c_content
+        }
+        with self.client.post(f"/posts/api/comment/{post_id}/", json=comment_data, catch_response=True) as response:
+            if response.status_code == 200:
+                response.success()
+                self.comment_id = response.json().get("id")
+            else:
+                response.failure(f"댓글 생성 실패: {response.status_code}")
+    
+        comment_id = self.comment_id
+        uc_content = f"{random_string(6)}"
+
+        ucomment_data = {
+            "content": uc_content
+        }
+        with self.client.put(f"/posts/api/detail/{comment_id}/", json=ucomment_data, catch_response=True) as response:
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure(f"댓글 수정 실패: {response.status_code}")
+    
+        parent_id = self.comment_id
+        r_content = f"{random_string(11)}"
+
+        reply_data = {
+            "content": r_content
+        }
+        with self.client.post(f"/posts/api/reply/{post_id}/{parent_id}/", json=reply_data, catch_response=True) as response:
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure(f"대댓글 생성 실패: {response.status_code}")
+
+        like_data = {
+            "comment_id": comment_id
+        }
+        with self.client.post(f"/posts/api/comment/like/{comment_id}/", json=like_data, catch_response=True) as response:
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure(f"대댓글 좋아요 실패: {response.status_code}")
+
+class WebsiteUser(HttpUser):
+    tasks = [UserBehavior]
+    wait_time = between(1, 3)

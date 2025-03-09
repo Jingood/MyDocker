@@ -23,6 +23,7 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ["id", "author", "post", "content", "created_at", "updated_at", "likes_count", "replies"]
+        read_only_fields = ["post"]
     
     def get_likes_count(self, obj):
         return obj.likes.count()
